@@ -1,0 +1,202 @@
+/* Definition der Farbpalette */
+:root {
+    --primary-color: #4CAF50;
+    --secondary-color: #333333;
+    --accent-color: #009688;
+    --background-color: #f9f9f9;
+    --text-color: #333333;
+    --white-color: #ffffff;
+}
+
+/* Allgemeiner Designstil */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 90%;
+    width: 600px; /* Standardgröße */
+    margin: 50px auto;
+    background-color: var(--white-color);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h3 {
+    text-align: center;
+    color: var(--primary-color);
+}
+
+/* Wrapper für horizontales Scrollen */
+.table-wrapper {
+    display: block; /* Der Wrapper muss sichtbar sein */
+    overflow-x: auto; /* Aktiviert horizontales Scrollen */
+    max-width: 100%; /* Begrenze die Breite auf den Container */
+    border: 1px solid var(--secondary-color); /* Optional: Rahmen um die Tabelle */
+}
+
+/* Abstand unterhalb der Tabelle, wenn das Ergebnisfeld nicht sichtbar ist */
+.table-wrapper:not(:has(+ .result[style*="display: block"])) {
+  margin-bottom: 20px;
+}
+
+/* Tabelle */
+table {
+    min-width: 600px;
+    border-collapse: collapse;
+    white-space: nowrap; /* Verhindert Zeilenumbrüche in den Zellen */
+}
+
+/* Kopf- und Zellenstile */
+th, td {
+    padding: 10px;
+    border: 1px solid var(--secondary-color);
+    text-align: center;
+}
+
+th {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+
+td {
+    background-color: var(--white-color);
+    color: var(--text-color);
+}
+
+/* Design der Input-Felder */
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 16px;
+}
+
+input[type="number"]:focus {
+    outline: 2px solid var(--primary-color);
+}
+
+/* Design der Buttons */
+button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3 ease, transform 0.2 ease;
+    box-shadow: 0 4px 6px rgb(0, 0, 0, 0.1);
+}
+
+button:hover {
+    background-color: var(--accent-color);
+    transform: translateY(-3px);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgb(0, 0, 0, 0.1);
+}
+
+/* Design von Links */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+a:hover {
+    color: var(--accent-color);
+    text-decoration: underline; 
+}
+
+/* Design des Ergebnisfelder */
+.result {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--white-color);
+    border-left: 4px solid var(--primary-color);
+    color: var(--text-color);
+    word-wrap: break-word;
+    text-align: justify;
+    display: none;
+}
+
+.info {
+    margin: 20px 0;
+    padding: 10px;
+    background-color: var(--background-color);
+    border-left: 4px solid var(--accent-color);
+    color: var(--text-color);
+    text-align: justify;
+}
+
+.highlight {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+/* Responsives Design für verschiedene Auflösungen */
+@media (max-width: 768px) {
+    .container {
+      width: 95%;
+    }
+  
+    table {
+      font-size: 14px;
+    }
+  
+    th,
+    td {
+      padding: 8px;
+    }
+  
+    button {
+      font-size: 14px;
+      padding: 10px;
+      gap: 8px;
+    }
+
+    button i {
+      font-size: 18px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h3 {
+      font-size: 18px;
+    }
+  
+    table {
+      font-size: 12px;
+    }
+  
+    th,
+    td {
+      padding: 6px;
+    }
+  
+    button {
+      font-size: 12px;
+      padding: 8px;
+    }
+  }

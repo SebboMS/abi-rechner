@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abitur-Rechner</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="script.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h3>Abitur-Rechner</h3>
+        <div class="info" id="infoArea">Gib in der Tabelle deine Noten für die einzelnen Fächer von Semester 3 bis 6 ein, sowie die Noten deiner Abiturprüfungen. Die <span class="highlight">Notenwerte</span> müssen zwischen 0 (= ungenügend) und 15 (= sehr gut plus) liegen.</div>
+        <div class="info"><span class="highlight">Wichtig:</span> Die Ergebnisse des Abitur-Rechners sind <span class="highlight">nicht verbindlich</span>. Bitte wende dich im Zweifel an deine Semesterleitung oder an den <a href="mailto:aufdemkamps@wbk.ms.de">Oberstufenkoordinator</a></div><p></p>
+        <form id="gradeForm">
+            <div class="table-wrapper">
+                <table>
+                    <tr>
+                        <th>Fach</th>
+                        <th>S3</th>
+                        <th>S4</th>
+                        <th>S5</th>
+                        <th>S6</th>
+                        <th>Abiturfach?</th>
+                        <th>Abitur</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Biologie</strong></td>
+                        <td><input type="number" name="biologySem3" min="0" max="15"></td>
+                        <td><input type="number" name="biologySem4" min="0" max="15"></td>
+                        <td><input type="number" name="biologySem5" min="0" max="15"></td>
+                        <td><input type="number" name="biologySem6" min="0" max="15"></td>
+                        <td></td>
+                        <td><input type="number" name="biologyExam" min="0" max="15" style="display: block"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deutsch</strong></td>
+                        <td><input type="number" name="germanSem3" min="0" max="15"></td>
+                        <td><input type="number" name="germanSem4" min="0" max="15"></td>
+                        <td><input type="number" name="germanSem5" min="0" max="15"></td>
+                        <td><input type="number" name="germanSem6" min="0" max="15"></td>
+                        <td></td>
+                        <td><input type="number" name="germanExam" min="0" max="15" style="display: block"></td>
+                    </tr>
+                    <tr>
+                        <td>Mathematik</td>
+                        <td><input type="number" name="mathSem3" min="0" max="15"></td>
+                        <td><input type="number" name="mathSem4" min="0" max="15"></td>
+                        <td><input type="number" name="mathSem5" min="0" max="15"></td>
+                        <td><input type="number" name="mathSem6" min="0" max="15"></td>
+                        <td><input type="checkbox" name="mathAbitur" data-group="group1" data-target="mathExam"></td>
+                        <td><input type="number" name="mathExam" data-group="group1" id="mathExam" min="0" max="15" style="display: none"></td>
+                    </tr>
+                    <tr>
+                        <td>Englisch</td>
+                        <td><input type="number" name="englishSem3" min="0" max="15"></td>
+                        <td><input type="number" name="englishSem4" min="0" max="15"></td>
+                        <td><input type="number" name="englishSem5" min="0" max="15"></td>
+                        <td><input type="number" name="englishSem6" min="0" max="15"></td>
+                        <td><input type="checkbox" name="englishAbitur" data-group="group1" data-target="englishExam"></td>
+                        <td><input type="number" name="englishExam" data-group="group1" id="englishExam" min="0" max="15" style="display: none"></td>
+                    </tr>
+                    <tr>
+                        <td>Kunst</td>
+                        <td><input type="number" name="otherSem3" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="otherSem4" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="placeholderArtSem5" min="0" max="15" data-group="group3" style="display:none"></td>
+                        <td><input type="number" name="placeholderArtSem6" min="0" max="15" data-group="group3" style="display:none"></td>
+                        <td><input type="checkbox" name="artAbitur" data-group="group2" data-target="artExam" style="display:none"></td>
+                        <td><input type="number" name="artExam" data-group="group2" id="artExam" min="0" max="15" class="GK" style="display: none"></td>
+                    </tr>
+                    <tr>
+                        <td>Erdkunde</td>
+                        <td><input type="number" name="placeholderGeographySem3" min="0" max="15" data-group="group3" style="display:none"></td>
+                        <td><input type="number" name="placeholderGeographySem4" min="0" max="15" data-group="group3" style="display:none"></td>
+                        <td><input type="number" name="otherSem5" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="otherSem6" min="0" max="15" class="GK"></td>
+                        <td><input type="checkbox" name="geographyAbitur" data-group="group2" data-target="geographyExam" style="display:none"></td>
+                        <td><input type="number" name="geographyExam" data-group="group2" id="geographyExam" min="0" max="15" class="GK" style="display: none"></td>
+                    </tr>
+                    <tr>
+                        <td>Geschichte</td>
+                        <td><input type="number" name="historySem3" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="historySem4" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="historySem5" min="0" max="15" class="GK"></td>
+                        <td><input type="number" name="historySem6" min="0" max="15" class="GK"></td>
+                        <td><input type="checkbox" name="historyAbitur" data-group="group2" style="display:none" data-target="historyExam"></td>
+                        <td><input type="number" name="historyExam" id="historyExam" min="0" max="15" class="GK" style="display:block"></td>
+                    </tr>
+                </table>
+            </div>
+        </form>
+        <div class="result" id="resultArea"><i>Hier werden später die <span class='highlight'>Ergebnisse</span> angezeigt.</i></div>
+        <div>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <button type="button" onclick="resetForm()"><i class="fas fa-undo"></i> Zurücksetzen</button>  
+        </div>
+    </div>
+</body>
+</html>
