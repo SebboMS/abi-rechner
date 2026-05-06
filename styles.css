@@ -249,9 +249,6 @@ td.cell-empty {
     opacity: 0.5;
 }
 
-tr:nth-child(even) td.cell-empty {
-    background: var(--border) !important;
-}
 
 /* ── Group label rows ─────────────────────────────────────── */
 

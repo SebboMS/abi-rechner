@@ -347,12 +347,14 @@ function getIncludedDeficitList(includeExams = true) {
 
 function buildTargetHint(totalPoints) {
     const currentAvg = Math.max(1.0, 5.67 - totalPoints / 180);
-    const nextTarget = parseFloat((Math.ceil(currentAvg * 10) / 10 - 0.1).toFixed(1));
+    const displayedAvg = parseFloat(currentAvg.toFixed(1));
+    const nextTarget = parseFloat((displayedAvg - 0.1).toFixed(1));
     if (nextTarget < 1.0) return "";
     const neededTotal = Math.ceil((5.67 - nextTarget) * 180);
     const diff = neededTotal - totalPoints;
     if (diff <= 0) return "";
-    return `<div class="result__hint">Noch <strong>${diff}&thinsp;Punkte</strong> mehr f&uuml;r einen Schnitt von <strong>${nextTarget.toFixed(1).replace(".", ",")}</strong>.</div>`;
+    const punkteStr = diff === 1 ? "Punkt" : "Punkte";
+    return `<div class="result__hint">Noch <strong>${diff}&thinsp;${punkteStr}</strong> mehr f&uuml;r einen Schnitt von <strong>${nextTarget.toFixed(1).replace(".", ",")}</strong>.</div>`;
 }
 
 function updateProgress() {
