@@ -243,10 +243,9 @@ td:first-child {
 }
 
 td.cell-empty {
-    background: var(--surface-soft) !important;
+    background: var(--border) !important;
     color: var(--text-muted);
     font-size: 13px;
-    opacity: 0.5;
 }
 
 

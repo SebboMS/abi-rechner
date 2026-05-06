@@ -64,6 +64,7 @@ const STORAGE_KEY = "abi-rechner-grades-v1";
 const SLOT_KEY = i => `abi-rechner-slot-${i}`;
 
 let currentPointsBlockI = 0;
+let currentTotalPoints = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('#gradeForm input[type="number"]').forEach(input => {
@@ -237,6 +238,7 @@ function calculate() {
     }
 
     const totalPoints = pointsBlockI + pointsBlockII;
+    currentTotalPoints = totalPoints;
     const avgAbitur = Math.max(1.0, 5.67 - totalPoints / 180);
     const avgStr = avgAbitur.toFixed(1).replace(".", ",");
 
@@ -384,6 +386,10 @@ function updateTargetOutput() {
         return;
     }
     const neededTotal = (5.67 - val) * 180;
+    if (currentTotalPoints >= neededTotal) {
+        outputEl.innerHTML = `<span class="target-achieved">Ziel bereits erreicht ✓</span>`;
+        return;
+    }
     const neededBlockII = neededTotal - currentPointsBlockI;
     if (neededBlockII <= 0) {
         outputEl.innerHTML = `<span class="target-achieved">Ziel bereits erreicht ✓</span>`;
