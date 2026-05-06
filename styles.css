@@ -243,7 +243,6 @@ td:first-child {
 }
 
 td.cell-empty {
-    background: var(--border) !important;
     color: var(--text-muted);
     font-size: 13px;
 }
@@ -270,6 +269,10 @@ tbody + tbody .group-label-row td {
 tbody.group-lk .group-label-row td    { border-left: 4px solid var(--primary); }
 tbody.group-gk .group-label-row td    { border-left: 4px solid var(--accent); }
 tbody.group-optional .group-label-row td { border-left: 4px solid var(--border-strong); }
+
+/* group-optional: invert zebra so Kunst (even) = white, Erdkunde (odd) = grey */
+tbody.group-optional tr:nth-child(even) td { background: var(--surface); }
+tbody.group-optional tr:not(.group-label-row):nth-child(odd) td { background: var(--surface-soft); }
 
 /* ── Badges & inputs ──────────────────────────────────────── */
 
