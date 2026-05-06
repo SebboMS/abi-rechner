@@ -3,99 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>Abitur-Rechner</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <script src="script.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
 </head>
-
 <body>
-    <div class="container">
-        <h3>Abitur-Rechner</h3>
-        <div class="info" id="infoArea">Gib in der Tabelle deine Noten für die einzelnen Fächer von Semester 3 bis 6 ein, sowie die Noten deiner Abiturprüfungen. Die <span class="highlight">Notenwerte</span> müssen zwischen 0 (= ungenügend) und 15 (= sehr gut plus) liegen.</div>
-        <div class="info"><span class="highlight">Wichtig:</span> Die Ergebnisse des Abitur-Rechners sind <span class="highlight">nicht verbindlich</span>. Bitte wende dich im Zweifel an deine Semesterleitung oder an den <a href="mailto:aufdemkamps@wbk.ms.de">Oberstufenkoordinator</a></div><p></p>
-        <form id="gradeForm">
+    <main class="container">
+        <header class="header">
+            <div class="header__icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+            </div>
+            <div>
+                <h1>Abitur-Rechner</h1>
+                <p>Semester 3&ndash;6 &middot; Abiturpr&uuml;fungen</p>
+            </div>
+        </header>
+
+        <div class="info">
+            Gib deine Noten f&uuml;r alle F&auml;cher von Semester 3 bis 6 sowie deine Abiturpr&uuml;fungsnoten ein. Die <span class="highlight">Notenwerte</span> liegen zwischen 0 (= ungen&uuml;gend) und 15 (= sehr gut plus). Die zugeh&ouml;rige Notenstufe wird beim Antippen eines Feldes angezeigt.
+        </div>
+
+        <div class="info info--important">
+            <span class="highlight">Wichtig:</span> Die Ergebnisse sind <span class="highlight">nicht verbindlich</span>. Wende dich im Zweifel an deine Semesterleitung oder den <a href="mailto:aufdemkamps@wbk.ms.de">Oberstufenkoordinator</a>.
+        </div>
+
+        <div class="progress" id="progress" aria-label="Fortschritt der Dateneingabe">
+            <div class="progress__bar"><div class="progress__fill" id="progressFill"></div></div>
+            <span class="progress__text" id="progressText">0 von 26 Feldern ausgef&uuml;llt</span>
+        </div>
+
+        <form id="gradeForm" autocomplete="off">
             <div class="table-wrapper">
                 <table>
-                    <tr>
-                        <th>Fach</th>
-                        <th>S3</th>
-                        <th>S4</th>
-                        <th>S5</th>
-                        <th>S6</th>
-                        <th>Abiturfach?</th>
-                        <th>Abitur</th>
-                    </tr>
-                    <tr>
-                        <td><strong>Biologie</strong></td>
-                        <td><input type="number" name="biologySem3" min="0" max="15"></td>
-                        <td><input type="number" name="biologySem4" min="0" max="15"></td>
-                        <td><input type="number" name="biologySem5" min="0" max="15"></td>
-                        <td><input type="number" name="biologySem6" min="0" max="15"></td>
-                        <td></td>
-                        <td><input type="number" name="biologyExam" min="0" max="15" style="display: block"></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Deutsch</strong></td>
-                        <td><input type="number" name="germanSem3" min="0" max="15"></td>
-                        <td><input type="number" name="germanSem4" min="0" max="15"></td>
-                        <td><input type="number" name="germanSem5" min="0" max="15"></td>
-                        <td><input type="number" name="germanSem6" min="0" max="15"></td>
-                        <td></td>
-                        <td><input type="number" name="germanExam" min="0" max="15" style="display: block"></td>
-                    </tr>
-                    <tr>
-                        <td>Mathematik</td>
-                        <td><input type="number" name="mathSem3" min="0" max="15"></td>
-                        <td><input type="number" name="mathSem4" min="0" max="15"></td>
-                        <td><input type="number" name="mathSem5" min="0" max="15"></td>
-                        <td><input type="number" name="mathSem6" min="0" max="15"></td>
-                        <td><input type="checkbox" name="mathAbitur" data-group="group1" data-target="mathExam"></td>
-                        <td><input type="number" name="mathExam" data-group="group1" id="mathExam" min="0" max="15" style="display: none"></td>
-                    </tr>
-                    <tr>
-                        <td>Englisch</td>
-                        <td><input type="number" name="englishSem3" min="0" max="15"></td>
-                        <td><input type="number" name="englishSem4" min="0" max="15"></td>
-                        <td><input type="number" name="englishSem5" min="0" max="15"></td>
-                        <td><input type="number" name="englishSem6" min="0" max="15"></td>
-                        <td><input type="checkbox" name="englishAbitur" data-group="group1" data-target="englishExam"></td>
-                        <td><input type="number" name="englishExam" data-group="group1" id="englishExam" min="0" max="15" style="display: none"></td>
-                    </tr>
-                    <tr>
-                        <td>Kunst</td>
-                        <td><input type="number" name="otherSem3" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="otherSem4" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="placeholderArtSem5" min="0" max="15" data-group="group3" style="display:none"></td>
-                        <td><input type="number" name="placeholderArtSem6" min="0" max="15" data-group="group3" style="display:none"></td>
-                        <td><input type="checkbox" name="artAbitur" data-group="group2" data-target="artExam" style="display:none"></td>
-                        <td><input type="number" name="artExam" data-group="group2" id="artExam" min="0" max="15" class="GK" style="display: none"></td>
-                    </tr>
-                    <tr>
-                        <td>Erdkunde</td>
-                        <td><input type="number" name="placeholderGeographySem3" min="0" max="15" data-group="group3" style="display:none"></td>
-                        <td><input type="number" name="placeholderGeographySem4" min="0" max="15" data-group="group3" style="display:none"></td>
-                        <td><input type="number" name="otherSem5" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="otherSem6" min="0" max="15" class="GK"></td>
-                        <td><input type="checkbox" name="geographyAbitur" data-group="group2" data-target="geographyExam" style="display:none"></td>
-                        <td><input type="number" name="geographyExam" data-group="group2" id="geographyExam" min="0" max="15" class="GK" style="display: none"></td>
-                    </tr>
-                    <tr>
-                        <td>Geschichte</td>
-                        <td><input type="number" name="historySem3" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="historySem4" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="historySem5" min="0" max="15" class="GK"></td>
-                        <td><input type="number" name="historySem6" min="0" max="15" class="GK"></td>
-                        <td><input type="checkbox" name="historyAbitur" data-group="group2" style="display:none" data-target="historyExam"></td>
-                        <td><input type="number" name="historyExam" id="historyExam" min="0" max="15" class="GK" style="display:block"></td>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th>Fach</th>
+                            <th>S3</th>
+                            <th>S4</th>
+                            <th>S5</th>
+                            <th>S6</th>
+                            <th>Abitur&shy;fach?</th>
+                            <th>Abitur&shy;note</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="group-lk">
+                        <tr class="group-label-row">
+                            <td colspan="7">Leistungskurse</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Biologie</strong><span class="subject-badge">LK</span></td>
+                            <td><input type="number" name="biologySem3" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="biologySem4" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="biologySem5" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="biologySem6" min="0" max="15" inputmode="numeric"></td>
+                            <td></td>
+                            <td><input type="number" name="biologyExam" min="0" max="15" inputmode="numeric"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Deutsch</strong><span class="subject-badge">LK</span></td>
+                            <td><input type="number" name="germanSem3" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="germanSem4" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="germanSem5" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="germanSem6" min="0" max="15" inputmode="numeric"></td>
+                            <td></td>
+                            <td><input type="number" name="germanExam" min="0" max="15" inputmode="numeric"></td>
+                        </tr>
+                    </tbody>
+
+                    <tbody class="group-gk">
+                        <tr class="group-label-row">
+                            <td colspan="7">Pflicht-Grundkurse</td>
+                        </tr>
+                        <tr>
+                            <td>Mathematik</td>
+                            <td><input type="number" name="mathSem3" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="mathSem4" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="mathSem5" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="mathSem6" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="checkbox" name="mathAbitur" data-group="group1" data-target="mathExam" aria-label="Mathematik als Abiturfach"></td>
+                            <td><input type="number" name="mathExam" id="mathExam" min="0" max="15" inputmode="numeric" class="exam-field hidden"></td>
+                        </tr>
+                        <tr>
+                            <td>Englisch</td>
+                            <td><input type="number" name="englishSem3" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="englishSem4" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="englishSem5" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="number" name="englishSem6" min="0" max="15" inputmode="numeric"></td>
+                            <td><input type="checkbox" name="englishAbitur" data-group="group1" data-target="englishExam" aria-label="Englisch als Abiturfach"></td>
+                            <td><input type="number" name="englishExam" id="englishExam" min="0" max="15" inputmode="numeric" class="exam-field hidden"></td>
+                        </tr>
+                        <tr>
+                            <td>Geschichte</td>
+                            <td><input type="number" name="historySem3" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td><input type="number" name="historySem4" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td><input type="number" name="historySem5" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td><input type="number" name="historySem6" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td></td>
+                            <td><input type="number" name="historyExam" min="0" max="15" inputmode="numeric"></td>
+                        </tr>
+                    </tbody>
+
+                    <tbody class="group-optional">
+                        <tr class="group-label-row">
+                            <td colspan="7">Optionale Grundkurse</td>
+                        </tr>
+                        <tr>
+                            <td>Kunst</td>
+                            <td><input type="number" name="artSem3" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td><input type="number" name="artSem4" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td class="cell-empty">&ndash;</td>
+                            <td class="cell-empty">&ndash;</td>
+                            <td class="cell-empty"></td>
+                            <td class="cell-empty"></td>
+                        </tr>
+                        <tr>
+                            <td>Erdkunde</td>
+                            <td class="cell-empty">&ndash;</td>
+                            <td class="cell-empty">&ndash;</td>
+                            <td><input type="number" name="geographySem5" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td><input type="number" name="geographySem6" min="0" max="15" inputmode="numeric" class="GK"></td>
+                            <td class="cell-empty"></td>
+                            <td class="cell-empty"></td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
+
+            <div class="legend">
+                <span class="legend__item"><span class="legend__swatch legend__swatch--included"></span>flie&szlig;t in die Wertung ein</span>
+                <span class="legend__item"><span class="legend__swatch legend__swatch--deficit"></span>Defizit (1&ndash;4 Punkte)</span>
+                <span class="legend__item"><span class="legend__swatch legend__swatch--zero"></span>0 Punkte</span>
+            </div>
+
+            <div class="grade-hint" id="gradeHint" aria-live="polite"></div>
         </form>
-        <div class="result" id="resultArea"><i>Hier werden später die <span class='highlight'>Ergebnisse</span> angezeigt.</i></div>
-        <div>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-            <button type="button" onclick="resetForm()"><i class="fas fa-undo"></i> Zurücksetzen</button>  
+
+        <div class="result" id="resultArea" aria-live="polite" aria-atomic="true"></div>
+
+        <div class="target-section" id="targetSection">
+            <div class="target-inner">
+                <label class="target-label" for="targetGrade">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    Ziel-Schnitt:
+                </label>
+                <input type="number" id="targetGrade" min="1.0" max="4.0" step="0.1" placeholder="z.B. 2,0" inputmode="decimal">
+                <div class="target-output" id="targetOutput"></div>
+            </div>
         </div>
-    </div>
+
+        <div class="actions">
+            <button type="button" id="shareButton" class="btn-secondary" title="Link zu diesen Noten kopieren">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                Teilen
+            </button>
+            <button type="button" id="printButton" class="btn-secondary" title="Druckansicht &ouml;ffnen">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Drucken
+            </button>
+            <button type="button" id="resetButton" title="Alle Felder leeren">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+                Zur&uuml;cksetzen
+            </button>
+        </div>
+
+        <section class="scenarios">
+            <div class="scenarios__header">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Szenarien
+            </div>
+            <p class="scenarios__desc">Speichere bis zu drei verschiedene Notensets &ndash; z.&thinsp;B. einen optimistischen und einen pessimistischen Fall &ndash; und lade sie per Klick, um die Ergebnisse zu vergleichen.</p>
+            <div class="scenarios__grid">
+                <div class="scenario-slot" data-slot="0">
+                    <input type="text" class="scenario-slot__name" value="Optimistisch" aria-label="Name f&uuml;r Szenario 1" maxlength="20">
+                    <div class="scenario-slot__grade">Leer</div>
+                    <div class="scenario-slot__actions">
+                        <button class="slot-btn slot-save" data-slot="0" title="Aktuelle Noten speichern">Speichern</button>
+                        <button class="slot-btn slot-load" data-slot="0" title="Szenario laden" disabled>Laden</button>
+                        <button class="slot-btn slot-clear" data-slot="0" title="Szenario l&ouml;schen" disabled>&times;</button>
+                    </div>
+                </div>
+                <div class="scenario-slot" data-slot="1">
+                    <input type="text" class="scenario-slot__name" value="Realistisch" aria-label="Name f&uuml;r Szenario 2" maxlength="20">
+                    <div class="scenario-slot__grade">Leer</div>
+                    <div class="scenario-slot__actions">
+                        <button class="slot-btn slot-save" data-slot="1" title="Aktuelle Noten speichern">Speichern</button>
+                        <button class="slot-btn slot-load" data-slot="1" title="Szenario laden" disabled>Laden</button>
+                        <button class="slot-btn slot-clear" data-slot="1" title="Szenario l&ouml;schen" disabled>&times;</button>
+                    </div>
+                </div>
+                <div class="scenario-slot" data-slot="2">
+                    <input type="text" class="scenario-slot__name" value="Pessimistisch" aria-label="Name f&uuml;r Szenario 3" maxlength="20">
+                    <div class="scenario-slot__grade">Leer</div>
+                    <div class="scenario-slot__actions">
+                        <button class="slot-btn slot-save" data-slot="2" title="Aktuelle Noten speichern">Speichern</button>
+                        <button class="slot-btn slot-load" data-slot="2" title="Szenario laden" disabled>Laden</button>
+                        <button class="slot-btn slot-clear" data-slot="2" title="Szenario l&ouml;schen" disabled>&times;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="sticky-result" id="stickyResult" role="status" aria-live="polite"></div>
+    </main>
 </body>
 </html>

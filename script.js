@@ -1,390 +1,658 @@
-window.onload = function() {
-    let inputs = document.querySelectorAll('input[type="number"]');
-    inputs.forEach (input => {
-        input.addEventListener("input", function() {
-            calculate();
-        });
+const ICONS = {
+    success: '<svg class="result__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>',
+    warning: '<svg class="result__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    error:   '<svg class="result__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>'
+};
+
+// DOM order must match for collectAbiturGrades() to work correctly (LK first, then GK)
+const FIELD_ORDER = [
+    "biologySem3", "biologySem4", "biologySem5", "biologySem6",
+    "germanSem3",  "germanSem4",  "germanSem5",  "germanSem6",
+    "mathSem3",    "mathSem4",    "mathSem5",    "mathSem6",
+    "englishSem3", "englishSem4", "englishSem5", "englishSem6",
+    "artSem3",     "artSem4",
+    "geographySem5", "geographySem6",
+    "historySem3", "historySem4", "historySem5", "historySem6",
+    "biologyExam", "germanExam", "mathExam", "englishExam", "historyExam"
+];
+
+const LK_NAMES = [
+    "biologySem3", "biologySem4", "biologySem5", "biologySem6",
+    "germanSem3",  "germanSem4",  "germanSem5",  "germanSem6"
+];
+
+const MANDATORY_GK_NAMES = [
+    "englishSem3", "englishSem4", "englishSem5", "englishSem6",
+    "mathSem3",    "mathSem4",    "mathSem5",    "mathSem6",
+    "historySem3", "historySem4", "historySem5", "historySem6"
+];
+
+const OPTIONAL_GK_NAMES = ["artSem3", "artSem4", "geographySem5", "geographySem6"];
+
+const GRADE_NAMES = {
+    0:  "0 Punkte — ungenügend (6)",
+    1:  "1 Punkt — mangelhaft minus (5−)",
+    2:  "2 Punkte — mangelhaft (5)",
+    3:  "3 Punkte — mangelhaft plus (5+)",
+    4:  "4 Punkte — ausreichend minus (4−)",
+    5:  "5 Punkte — ausreichend (4)",
+    6:  "6 Punkte — ausreichend plus (4+)",
+    7:  "7 Punkte — befriedigend minus (3−)",
+    8:  "8 Punkte — befriedigend (3)",
+    9:  "9 Punkte — befriedigend plus (3+)",
+    10: "10 Punkte — gut minus (2−)",
+    11: "11 Punkte — gut (2)",
+    12: "12 Punkte — gut plus (2+)",
+    13: "13 Punkte — sehr gut minus (1−)",
+    14: "14 Punkte — sehr gut (1)",
+    15: "15 Punkte — sehr gut plus (1+)"
+};
+
+const FIELD_LABELS = {
+    biologySem3: "Bio S3",   biologySem4: "Bio S4",   biologySem5: "Bio S5",   biologySem6: "Bio S6",
+    germanSem3:  "Deu S3",   germanSem4:  "Deu S4",   germanSem5:  "Deu S5",   germanSem6:  "Deu S6",
+    mathSem3:    "Mat S3",   mathSem4:    "Mat S4",   mathSem5:    "Mat S5",   mathSem6:    "Mat S6",
+    englishSem3: "Eng S3",   englishSem4: "Eng S4",   englishSem5: "Eng S5",   englishSem6: "Eng S6",
+    artSem3:     "Kun S3",   artSem4:     "Kun S4",
+    geographySem5: "Erd S5", geographySem6: "Erd S6",
+    historySem3: "Ges S3",   historySem4: "Ges S4",   historySem5: "Ges S5",   historySem6: "Ges S6",
+    biologyExam: "Bio Abi",  germanExam:  "Deu Abi",  mathExam:    "Mat Abi",
+    englishExam: "Eng Abi",  historyExam: "Ges Abi"
+};
+
+const STORAGE_KEY = "abi-rechner-grades-v1";
+const SLOT_KEY = i => `abi-rechner-slot-${i}`;
+
+let currentPointsBlockI = 0;
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('#gradeForm input[type="number"]').forEach(input => {
+        input.addEventListener("input", onInput);
+        input.addEventListener("keydown", onKeyDown);
+        input.addEventListener("focus", e => updateGradeHint(e.target));
+        input.addEventListener("blur", () => hideGradeHint());
     });
+
+    document.querySelectorAll('#gradeForm input[type="checkbox"][data-group]').forEach(cb => {
+        cb.addEventListener("change", handleCheckboxChange);
+    });
+
+    document.getElementById("resetButton").addEventListener("click", resetForm);
+    document.getElementById("printButton").addEventListener("click", () => window.print());
+    document.getElementById("shareButton").addEventListener("click", shareLink);
+    document.getElementById("targetGrade").addEventListener("input", updateTargetOutput);
+
+    document.querySelectorAll(".slot-save").forEach(btn => {
+        btn.addEventListener("click", () => saveSlot(+btn.dataset.slot));
+    });
+    document.querySelectorAll(".slot-load").forEach(btn => {
+        btn.addEventListener("click", () => loadSlot(+btn.dataset.slot));
+    });
+    document.querySelectorAll(".slot-clear").forEach(btn => {
+        btn.addEventListener("click", () => clearSlot(+btn.dataset.slot));
+    });
+
+    // Sticky result bar via IntersectionObserver
+    const stickyResult = document.getElementById("stickyResult");
+    const resultArea = document.getElementById("resultArea");
+    const observer = new IntersectionObserver(([entry]) => {
+        const visible = resultArea.style.display !== "none" && !entry.isIntersecting;
+        stickyResult.classList.toggle("sticky--visible", visible);
+    }, { threshold: 0 });
+    observer.observe(resultArea);
+
+    const fromHash = decodeHashGrades();
+    if (fromHash) {
+        applyState(fromHash);
+        history.replaceState(null, "", location.pathname + location.search);
+    } else {
+        loadStoredState();
+    }
+
+    loadScenarios();
+    updateProgress();
+    if (anyInputFilled()) calculate();
+});
+
+function onInput(e) {
+    updateGradeHint(e.target);
+    updateProgress();
+    calculate();
+    saveState();
+    if (e.target.value.length >= 2) focusNext(e.target);
+}
+
+function onKeyDown(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        focusNext(e.target);
+    }
+}
+
+function focusNext(current) {
+    const inputs = Array.from(document.querySelectorAll('#gradeForm input[type="number"]:not(.hidden)'));
+    const idx = inputs.indexOf(current);
+    if (idx >= 0 && idx < inputs.length - 1) inputs[idx + 1].focus();
+}
+
+function handleCheckboxChange() {
+    const checkbox = this;
+    const group = checkbox.dataset.group;
+    const targetEl = document.getElementById(checkbox.dataset.target);
+
+    if (checkbox.checked) {
+        if (targetEl) targetEl.classList.remove("hidden");
+        document.querySelectorAll(`input[type="checkbox"][data-group="${group}"]`).forEach(other => {
+            if (other !== checkbox) {
+                other.checked = false;
+                const otherTarget = document.getElementById(other.dataset.target);
+                if (otherTarget) otherTarget.classList.add("hidden");
+            }
+        });
+    } else {
+        if (targetEl) targetEl.classList.add("hidden");
+    }
+
+    updateProgress();
+    calculate();
+    saveState();
 }
 
 function calculate() {
-    document.getElementById("resultArea").style.display = 'block';
-    if (validateInputs()) {
-        highlightMandatoryGrades();
-        const LKGrades = collectLKGrades();
-        const GKGrades = collectGKGrades(LKGrades);
-        const abiturGrades = collectAbiturGrades();
-        displayResults(calculateTotalPoints(GKGrades, LKGrades, abiturGrades));
-        highlightDeficits();
-        highlightZeroGrades();
+    const allInputs = Array.from(document.querySelectorAll('#gradeForm input[type="number"]'));
+    const visibleInputs = allInputs.filter(i => !i.classList.contains("hidden"));
+
+    clearStates(allInputs);
+
+    const validation = validateGrades(visibleInputs);
+    if (!validation.ok) {
+        if (validation.zeroInputs) validation.zeroInputs.forEach(el => el.classList.add("is-zero"));
+        if (validation.tone !== "neutral") showResult(validation);
+        else hideResult();
+        return;
     }
+
+    const group1Checked = Array.from(document.querySelectorAll('input[type="checkbox"][data-group="group1"]'))
+        .some(cb => cb.checked);
+    if (!group1Checked) {
+        showResult({ tone: "warning", message: 'Bitte w&auml;hle als <span class="highlight">3.&nbsp;bzw.&nbsp;4.&nbsp;Abiturfach</span> entweder Mathematik oder Englisch aus.' });
+        return;
+    }
+
+    LK_NAMES.forEach(n => byEl(n).classList.add("is-included"));
+    const LKGrades = LK_NAMES.map(byVal);
+
+    const GKGrades = collectGKGrades(LKGrades);
+    const abiturGrades = collectAbiturGrades();
+
+    markDeficits(allInputs);
+
+    const deficitsLK = countDeficits(LKGrades);
+    const deficitsGK = countDeficits(GKGrades);
+    const totalDeficits = deficitsLK + deficitsGK;
+
+    if (totalDeficits > 5) {
+        const deficitList = getIncludedDeficitList();
+        showResult({ tone: "error", message: `Du hast in den einzubringenden Kursen insgesamt mehr als <span class="highlight">f&uuml;nf Defizite</span>. Damit w&auml;rst du nicht zur Abiturpr&uuml;fung zugelassen.` +
+            (deficitList ? `<div class="result__deficits">Defizite: ${deficitList}</div>` : "") });
+        return;
+    }
+    if (deficitsLK > 3) {
+        const deficitList = getIncludedDeficitList();
+        showResult({ tone: "error", message: `Du hast im Leistungskursbereich mehr als <span class="highlight">drei Defizite</span>. Damit w&auml;rst du nicht zur Abiturpr&uuml;fung zugelassen.` +
+            (deficitList ? `<div class="result__deficits">Defizite: ${deficitList}</div>` : "") });
+        return;
+    }
+
+    const pointsLK = 2 * LKGrades.reduce((a, b) => a + b, 0);
+    const pointsGK = GKGrades.reduce((a, b) => a + b, 0);
+    const pointsBlockI = Math.round(((pointsLK + pointsGK) / (2 * LKGrades.length + GKGrades.length)) * 40);
+    currentPointsBlockI = pointsBlockI;
+
+    if (pointsBlockI < 200) {
+        showResult({ tone: "error", message: `Du hast in Block&nbsp;I mit <span class="highlight">${pointsBlockI}&thinsp;Punkten</span> weniger als <span class="highlight">200&thinsp;Punkte</span> erreicht. Damit w&auml;rst du nicht zur Abiturpr&uuml;fung zugelassen.` });
+        return;
+    }
+
+    document.querySelectorAll('input[name$="Exam"]:not(.hidden)').forEach(i => i.classList.add("is-included"));
+
+    const pointsBlockII = 5 * abiturGrades.reduce((a, b) => a + b, 0);
+
+    if (pointsBlockII < 100) {
+        showResult({ tone: "error", message: `Du hast in den Abiturpr&uuml;fungen mit <span class="highlight">${pointsBlockII}&thinsp;Punkten</span> weniger als <span class="highlight">100&thinsp;Punkte</span> (Block&nbsp;II) erreicht. M&uuml;ndliche Nachpr&uuml;fungen sind ggf. m&ouml;glich.` });
+        return;
+    }
+
+    // abiturGrades order (DOM order): [biologyExam, germanExam, math|englishExam, historyExam]
+    const deficitsAbiLK = countDeficits(abiturGrades.slice(0, 2));
+    const deficitsAbiGK = countDeficits(abiturGrades.slice(2));
+
+    if (deficitsAbiLK >= 2) {
+        showResult({ tone: "error", message: `Du hast in den <span class="highlight">Leistungskursen</span> im Abiturbereich ${deficitsAbiLK}&thinsp;Defizite. Damit h&auml;ttest du die Abiturpr&uuml;fung nicht bestanden. M&uuml;ndliche Nachpr&uuml;fungen sind ggf. m&ouml;glich.` });
+        return;
+    }
+    if (deficitsAbiGK >= 2) {
+        showResult({ tone: "error", message: `Du hast in den <span class="highlight">Grundkursen</span> im Abiturbereich ${deficitsAbiGK}&thinsp;Defizite. Damit h&auml;ttest du die Abiturpr&uuml;fung nicht bestanden. M&uuml;ndliche Nachpr&uuml;fungen sind ggf. m&ouml;glich.` });
+        return;
+    }
+
+    const totalPoints = pointsBlockI + pointsBlockII;
+    const avgAbitur = Math.max(1.0, 5.67 - totalPoints / 180);
+    const avgStr = avgAbitur.toFixed(1).replace(".", ",");
+
+    const deficitListSem = getIncludedDeficitList(false);
+    const targetHint = buildTargetHint(totalPoints);
+
+    const breakdown = {
+        rows: [
+            { label: "Block I &mdash; Schulleistungen", formula: `${LKGrades.length} LK-Sem. &times;2 + ${GKGrades.length} GK-Sem. &times;1`, points: pointsBlockI },
+            { label: "Block II &mdash; Abiturpr&uuml;fungen", formula: `(${abiturGrades.join(" + ")}) &times; 5`, points: pointsBlockII }
+        ],
+        total: totalPoints
+    };
+
+    showResult({
+        tone: "success",
+        schnitt: avgStr,
+        message: `Abiturschnitt: <span class="highlight">${avgStr}</span> &middot; Gesamtpunkte: <span class="highlight">${totalPoints}</span>` +
+            (deficitListSem ? `<div class="result__deficits">Defizite: ${deficitListSem}</div>` : "") +
+            targetHint,
+        breakdown
+    });
+
+    showTargetSection();
+    updateTargetOutput();
 }
 
-function collectAbiturGrades() {
-    var examValues = [];
-    var examInputs = document.querySelectorAll('input[name$="Exam"]');
-    
-    examInputs.forEach(function(input) {
-        var computedStyle = window.getComputedStyle(input);
-        if (computedStyle.display == 'block') {
-            examValues.push(parseInt(input.value));
+function collectGKGrades(LKGrades) {
+    MANDATORY_GK_NAMES.forEach(n => byEl(n).classList.add("is-included"));
+    const mandatoryGrades = MANDATORY_GK_NAMES.map(byVal);
+
+    const weightedSum = 2 * LKGrades.reduce((a, b) => a + b, 0) + mandatoryGrades.reduce((a, b) => a + b, 0);
+    const currentAvg = weightedSum / (2 * LKGrades.length + mandatoryGrades.length);
+
+    const deficitsLK = countDeficits(LKGrades);
+    const deficitsGK = countDeficits(mandatoryGrades);
+    const includeAll = (deficitsLK + deficitsGK) >= 5;
+
+    const allGKGrades = [...mandatoryGrades];
+    OPTIONAL_GK_NAMES.forEach(name => {
+        const v = byVal(name);
+        if (includeAll || v > currentAvg) {
+            allGKGrades.push(v);
+            byEl(name).classList.add("is-included");
         }
     });
-    return examValues;
-}
 
-function collectLKGrades(){
-    return [
-        parseInt(document.getElementsByName("biologySem3")[0].value),
-        parseInt(document.getElementsByName("biologySem4")[0].value),
-        parseInt(document.getElementsByName("biologySem5")[0].value),
-        parseInt(document.getElementsByName("biologySem6")[0].value),
-        parseInt(document.getElementsByName("germanSem3")[0].value),
-        parseInt(document.getElementsByName("germanSem4")[0].value),
-        parseInt(document.getElementsByName("germanSem5")[0].value),
-        parseInt(document.getElementsByName("germanSem6")[0].value)
-    ];
-}
-
-function collectGKGrades(passedLKGrades){
-    const englishGrades = [
-        parseInt(document.getElementsByName("englishSem3")[0].value),
-        parseInt(document.getElementsByName("englishSem4")[0].value),
-        parseInt(document.getElementsByName("englishSem5")[0].value),
-        parseInt(document.getElementsByName("englishSem6")[0].value)
-    ];
-    const mathGrades = [
-        parseInt(document.getElementsByName("mathSem3")[0].value),
-        parseInt(document.getElementsByName("mathSem4")[0].value),
-        parseInt(document.getElementsByName("mathSem5")[0].value),
-        parseInt(document.getElementsByName("mathSem6")[0].value)
-    ];
- 
-    let selectedGKGrades = [];
-    let otherGKGrades = [];
-
-    selectedGKGrades = [
-        parseInt(document.getElementsByName("historySem3")[0].value),
-        parseInt(document.getElementsByName("historySem4")[0].value),
-        parseInt(document.getElementsByName("historySem5")[0].value),
-        parseInt(document.getElementsByName("historySem6")[0].value)
-    ];
-    otherGKGrades = [
-        parseInt(document.getElementsByName("otherSem3")[0].value),
-        parseInt(document.getElementsByName("otherSem4")[0].value),
-        parseInt(document.getElementsByName("otherSem5")[0].value),
-        parseInt(document.getElementsByName("otherSem6")[0].value)         
-    ];
-    setBackgroundColor([
-        document.getElementsByName("historySem3")[0],
-        document.getElementsByName("historySem4")[0],
-        document.getElementsByName("historySem5")[0],
-        document.getElementsByName("historySem6")[0],
-    ], "yellow");
-
-    const currentAvg = (((passedLKGrades.reduce((total, current) => total + current * 2, 0)) + (mathGrades.reduce((total, current) => total + current, 0)) + (englishGrades.reduce((total, current) => total + current, 0)) + (selectedGKGrades.reduce((total, current) => total + current, 0))) / 28);
-    let allGKGrades = (englishGrades.concat(mathGrades, selectedGKGrades));
-
-    if (((checkGKDeficits(allGKGrades)) + (checkLKDeficits(passedLKGrades))) >= 5) {
-        //Wenn fünf (oder mehr) Defizite vorliegen, gehen alle Noten in die Bewertung ein.
-        for (var j = 0; j < otherGKGrades.length; j++) {
-            allGKGrades.push(otherGKGrades[j]);
-            document.getElementsByName("otherSem" + (j+3).toString())[0].style.backgroundColor = "yellow";
-        }
-    } else {
-        //Im anderen Fall gehen nur die Noten ein, die besser sind als der Schnitt.
-        for (var i = 0; i < otherGKGrades.length; i++) {
-            if (otherGKGrades[i] > currentAvg) {
-                allGKGrades.push(otherGKGrades[i]);
-                document.getElementsByName("otherSem" + (i+3).toString())[0].style.backgroundColor = "yellow";
-            }
-        }    
-    }
     return allGKGrades;
 }
 
-function calculateTotalPoints(passedGKGrades, passedLKGrades, passedAbiturGrades){
-    var deficitsGK = checkGKDeficits(passedGKGrades);
-    var deficitsLK = checkLKDeficits(passedLKGrades);
-    //console.log("Defizite GK: " +  deficitsGK + " / Defizite LK: " + deficitsLK);
-    if ((deficitsGK + deficitsLK) > 5) {
-        return "Du hast in den einzubringenden Kursen insgesamt mehr als <span class='highlight'>fünf Defizite</span>. Damit wärst du nicht zur Abiturprüfung zugelassen.";
-    } else if (deficitsLK > 3) {
-        return "Du hast im Leistungskursbereich mehr als <span class='highlight'>drei Defizite</span>. Damit wärst du nicht zur Abiturprüfung zugelassen.";
-    } else {
-        const pointsLK = 2 * passedLKGrades.reduce((acc, curr) => acc + curr, 0);
-        const pointsGK = passedGKGrades.reduce((acc, curr) => acc + curr, 0);
-        const pointsBlockI = Math.round(((pointsLK + pointsGK) / ((2 * passedLKGrades.length) + passedGKGrades.length)) * 40);
-        if ((pointsBlockI) < 200) {
-            return "Du hast in den einzubringenden Kursen weniger als <span class='highlight'>200 Punkte</span> erreicht. Damit wärst du nicht zur Abiturprüfung zugelassen.";
-        } else {
-            const pointsBlockII = 5 * passedAbiturGrades.reduce((acc, curr) => acc + curr, 0);
-            if (pointsBlockII < 100) {
-                return "Du hast in den Abiturprüfungen mit <span class='highlight'>" + pointsBlockII + " Punkten</span> weniger als <span class='red-letter'>100 Punkte</span> erreicht. Damit hättest du die Abiturprüfung nicht bestanden. Mündliche Nachprüfungen sind ggf. möglich."
-            } else if (checkAbiGKDeficits(passedAbiturGrades) >= 2) {
-                return "Du hast in den Grundkursen im Abiturbereich <span class='highlight'>" + checkAbiGKDeficits(passedAbiturGrades) + " Defizite</span>. Damit hättest du die Abiturprüfung nicht bestanden. Mündliche Nachprüfungen sind ggf. möglich."
-            } else if (checkAbiLKDeficits(passedAbiturGrades) >= 2) {
-                return "Du hast in den Leistungskursen im Abiturbereich <span class='highlight'>" + checkAbiLKDeficits(passedAbiturGrades) + " Defizite</span>. Damit hättest du die Abiturprüfung nicht bestanden. Mündliche Nachprüfungen sind ggf. möglich."
-            } else {
-                const totalPoints = pointsBlockI + pointsBlockII;
-                const avgAbitur = 5.67 - (totalPoints / 180);
-                if (avgAbitur < 1) {
-                    avgAbitur = 1.0;
-                }
-                return "Du hast die Abiturprüfung mit einem <span class='highlight'>Schnitt</span> von <span class='red-letter'>" + avgAbitur.toFixed(1) + "</span> bestanden.";
-            }
+function collectAbiturGrades() {
+    return Array.from(document.querySelectorAll('input[name$="Exam"]'))
+        .filter(i => !i.classList.contains("hidden"))
+        .map(i => parseInt(i.value, 10));
+}
+
+function validateGrades(visibleInputs) {
+    const zeroInputs = [];
+    for (const input of visibleInputs) {
+        const value = parseInt(input.value, 10);
+        if (isNaN(value)) {
+            return { ok: false, tone: "neutral", message: "" };
+        }
+        if (value < 0 || value > 15) {
+            return { ok: false, tone: "error", message: 'Die Noten m&uuml;ssen zwischen <span class="highlight">0</span> und <span class="highlight">15</span> liegen.' };
+        }
+        if (value === 0 && !input.name.endsWith("Exam")) {
+            zeroInputs.push(input);
         }
     }
-}
-
-function displayResults(resultLine){
-    const resultArea = document.getElementById('resultArea');
-    resultArea.innerHTML = resultLine;
-}
-
-function checkLKDeficits(passedLKGrades, passedGKGrades) {
-    var deficitsLK = 0;
-    for (var i = 0; i < passedLKGrades.length; i++) {
-        if (passedLKGrades[i] <= 4) {
-            deficitsLK++;
-        }
+    if (zeroInputs.length > 0) {
+        return { ok: false, tone: "error", message: 'Mindestens ein Semesterkurs wurde mit <span class="highlight">0&thinsp;Punkten</span> abgeschlossen. Damit w&auml;re eine Zulassung zur Abiturpr&uuml;fung nicht m&ouml;glich.', zeroInputs };
     }
-    return deficitsLK;
+    return { ok: true };
 }
 
-function checkGKDeficits(passedGKGrades) {
-    var deficitsGK = 0;
-    for (var i = 0; i < passedGKGrades.length; i++) {
-        if (passedGKGrades[i] <= 4) {
-            deficitsGK++;
-        }
-    }
-    return deficitsGK;
+function clearStates(inputs) {
+    inputs.forEach(i => i.classList.remove("is-included", "is-deficit", "is-zero"));
 }
 
-function checkAbiLKDeficits(passedAbiturGrades) {
-    var deficitsLKAbitur = 0;
-    for (var i = 0; i < (passedAbiturGrades.length - 2); i++) {
-        if (passedAbiturGrades[i] <= 4) {
-            deficitsLKAbitur++;
-        }
-    }
-    return deficitsLKAbitur;
-}
-
-function checkAbiGKDeficits(passedAbiturGrades) {
-    var deficitsGKAbitur = 0;
-    for (var i = 2; i < (passedAbiturGrades.length); i++) {
-        if (passedAbiturGrades[i] <= 4) {
-            deficitsGKAbitur++;
-        }
-    }
-    return deficitsGKAbitur;
-}
-
-function highlightMandatoryGrades(){
-    setBackgroundColor(document.querySelectorAll('input[type="number"]'), 'white');
-    setBackgroundColor([
-        document.getElementsByName("englishSem3")[0],
-        document.getElementsByName("englishSem4")[0],
-        document.getElementsByName("englishSem5")[0],
-        document.getElementsByName("englishSem6")[0],
-        document.getElementsByName("mathSem3")[0],
-        document.getElementsByName("mathSem4")[0],
-        document.getElementsByName("mathSem5")[0],
-        document.getElementsByName("mathSem6")[0],
-        document.getElementsByName("biologySem3")[0],
-        document.getElementsByName("biologySem4")[0],
-        document.getElementsByName("biologySem5")[0],
-        document.getElementsByName("biologySem6")[0],
-        document.getElementsByName("germanSem3")[0],
-        document.getElementsByName("germanSem4")[0],
-        document.getElementsByName("germanSem5")[0],
-        document.getElementsByName("germanSem6")[0],
-        document.getElementsByName("germanExam")[0],
-        document.getElementsByName("biologyExam")[0],
-        document.getElementsByName("englishExam")[0],
-        document.getElementsByName("mathExam")[0],
-        document.getElementsByName("historyExam")[0],
-    ], "yellow");
-}
-
-function setBackgroundColor(elements, color) {
-    elements.forEach(element => {
-        element.style.backgroundColor = color;
+function markDeficits(inputs) {
+    inputs.forEach(input => {
+        const v = parseInt(input.value, 10);
+        if (v >= 1 && v <= 4) input.classList.add("is-deficit");
     });
+}
+
+function countDeficits(grades) {
+    return grades.filter(g => g <= 4).length;
+}
+
+function byEl(name) {
+    return document.getElementsByName(name)[0];
+}
+
+function byVal(name) {
+    return parseInt(byEl(name).value, 10);
+}
+
+function getIncludedDeficitList(includeExams = true) {
+    const selector = includeExams
+        ? 'input[type="number"].is-included.is-deficit'
+        : 'input[type="number"].is-included.is-deficit:not([name$="Exam"])';
+    const deficits = Array.from(document.querySelectorAll(selector));
+    if (!deficits.length) return "";
+    return deficits.map(i => `${FIELD_LABELS[i.name] || i.name}&thinsp;(${i.value})`).join(", ");
+}
+
+function buildTargetHint(totalPoints) {
+    const currentAvg = Math.max(1.0, 5.67 - totalPoints / 180);
+    const nextTarget = parseFloat((Math.ceil(currentAvg * 10) / 10 - 0.1).toFixed(1));
+    if (nextTarget < 1.0) return "";
+    const neededTotal = Math.ceil((5.67 - nextTarget) * 180);
+    const diff = neededTotal - totalPoints;
+    if (diff <= 0) return "";
+    return `<div class="result__hint">Noch <strong>${diff}&thinsp;Punkte</strong> mehr f&uuml;r einen Schnitt von <strong>${nextTarget.toFixed(1).replace(".", ",")}</strong>.</div>`;
+}
+
+function updateProgress() {
+    const visible = Array.from(document.querySelectorAll('#gradeForm input[type="number"]:not(.hidden)'));
+    const filled = visible.filter(i => i.value !== "").length;
+    const total = visible.length;
+    const pct = total > 0 ? (filled / total) * 100 : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressText").textContent = `${filled} von ${total} Feldern ausgefüllt`;
+}
+
+function showTargetSection() {
+    document.getElementById("targetSection").classList.add("target--visible");
+}
+
+function hideTargetSection() {
+    document.getElementById("targetSection").classList.remove("target--visible");
+    document.getElementById("targetOutput").innerHTML = "";
+}
+
+function updateTargetOutput() {
+    const outputEl = document.getElementById("targetOutput");
+    const rawVal = document.getElementById("targetGrade").value.replace(",", ".");
+    const val = parseFloat(rawVal);
+    if (isNaN(val) || val < 1.0 || val > 4.0) {
+        outputEl.innerHTML = "";
+        return;
+    }
+    const neededTotal = (5.67 - val) * 180;
+    const neededBlockII = neededTotal - currentPointsBlockI;
+    if (neededBlockII <= 0) {
+        outputEl.innerHTML = `<span class="target-achieved">Ziel bereits erreicht ✓</span>`;
+        return;
+    }
+    const neededAvgPerExam = neededBlockII / 5 / 4;
+    if (neededAvgPerExam > 15) {
+        outputEl.innerHTML = `<span class="target-impossible">Mit Block&thinsp;I allein nicht mehr erreichbar.</span>`;
+        return;
+    }
+    outputEl.innerHTML = `<strong>${Math.ceil(neededBlockII)}&thinsp;Punkte</strong> in Block&thinsp;II n&ouml;tig (⌀&thinsp;${neededAvgPerExam.toFixed(1).replace(".", ",")}/15 pro Pr&uuml;fung)`;
+}
+
+function showResult({ tone, schnitt, message, breakdown }) {
+    const area = document.getElementById("resultArea");
+    area.classList.remove("result--success", "result--warning", "result--error");
+    if (tone === "success") area.classList.add("result--success");
+    else if (tone === "warning") area.classList.add("result--warning");
+    else if (tone === "error") area.classList.add("result--error");
+
+    area.dataset.schnitt = schnitt || "";
+
+    let html = (ICONS[tone] || "") + message;
+    if (breakdown) {
+        const rowsHtml = breakdown.rows.map(r =>
+            `<tr><td>${r.label}</td><td>${r.formula}</td><td>${r.points}</td></tr>`
+        ).join("");
+        html += `<table class="breakdown"><tbody>${rowsHtml}</tbody><tfoot><tr><td>Gesamt</td><td></td><td>${breakdown.total}</td></tr></tfoot></table>`;
+    }
+
+    area.innerHTML = html;
+    area.style.display = "block";
+
+    // Update sticky bar
+    const sticky = document.getElementById("stickyResult");
+    if (tone === "success" && schnitt) {
+        sticky.style.color = "var(--success-text)";
+        sticky.innerHTML = `Abiturschnitt: <strong>${schnitt}</strong> &middot; ${breakdown ? breakdown.total + "&thinsp;Punkte" : ""}`;
+    } else if (tone === "warning") {
+        sticky.style.color = "var(--warning-text)";
+        sticky.textContent = "Bitte Abiturfach wählen";
+    } else if (tone === "error") {
+        sticky.style.color = "var(--danger-text)";
+        sticky.textContent = "Nicht bestanden / Fehler";
+    } else {
+        sticky.textContent = "";
+    }
+}
+
+function hideResult() {
+    const area = document.getElementById("resultArea");
+    area.style.display = "none";
+    area.classList.remove("result--success", "result--warning", "result--error");
+    area.dataset.schnitt = "";
+    document.getElementById("stickyResult").classList.remove("sticky--visible");
+    hideTargetSection();
 }
 
 function resetForm() {
-    document.getElementById("resultArea").style.display = 'none';
-
-    // Zugriff auf das gesamte Formular
-    const form = document.getElementById('gradeForm');
-    
-    // Setze alle Eingabefelder zurück
-    const inputs = form.querySelectorAll('input');
-    inputs.forEach(input => {
-        if (input.type === 'number') {
-            input.value = '';  // Leere alle Textfelder
-            // Verstecke Prüfungsnoten-Felder, die zu group1 oder group2 gehören
-            if (input.dataset.group === 'group1' || input.dataset.group === 'group2' || input.dataset.group === 'group3') {
-                input.style.display = 'none';  // Verstecke diese spezifischen Felder
-            } else {
-                input.style.display = 'block';  // Stelle sicher, dass andere Felder sichtbar bleiben
-            }
-        } else if (input.type === 'checkbox') {
-            input.checked = false;  // Deaktiviere alle Checkboxen
-        }
-        input.style.backgroundColor = "white";
-    });
-
-    // Lösche alle Fehlermeldungen
-    const resultArea = document.getElementById('resultArea');
-    resultArea.innerHTML = "Hier werden später die <span class='highlight'>Ergebnisse<span> angezeigt.";
+    hideResult();
+    document.getElementById("gradeForm").reset();
+    document.querySelectorAll(".exam-field").forEach(i => i.classList.add("hidden"));
+    clearStates(document.querySelectorAll('#gradeForm input[type="number"]'));
+    hideGradeHint();
+    updateProgress();
+    currentPointsBlockI = 0;
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
 }
 
-function validateInputs() {
-    const inputs = document.querySelectorAll('input[type="number"]');
-    let allValid = true;
-    let errorMessage = '';
-
-    // Überprüfe Eingabefelder
-    inputs.forEach(input => {
-        if (input.style.display !== 'none' && (input.value === '' || input.value < 0 || input.value > 15)) {
-            allValid = false;
-            errorMessage = "Bitte gib für alle <span class='highlight'>sichtbaren Felder</span> Noten zwischen 0 und 15 ein.";
-        } 
-    });
-
-    // Überprüfe Checkboxen für Gruppe 1
-    const group1Checked = Array.from(document.querySelectorAll('input[type="checkbox"][data-group="group1"]'))
-                                .some(checkbox => checkbox.checked);
-    // Überprüfe Checkboxen für Gruppe 2
-    const group2Checked = Array.from(document.querySelectorAll('input[type="checkbox"][data-group="group2"]'))
-                                .some(checkbox => checkbox.checked);
-
-    // Generiere Fehlermeldungen basierend auf Checkbox-Prüfungen
-    if (!group1Checked) {
-        allValid = false;
-        errorMessage += ' Du hast kein <span class="highlight">drittes bzw. viertes Abiturfach</span> ausgewählt.';
-    }
-
-    // Zeige Fehlermeldungen oder Bestätigung an
-    const resultArea = document.getElementById('resultArea');
-    if (!allValid) {
-        resultArea.innerHTML = errorMessage;
-        return
-    }
-
-    return allValid;
+function saveState() {
+    const state = getCurrentState();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
 }
 
-
-document.addEventListener('DOMContentLoaded', function() {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"][data-group]');
-    checkboxes.forEach(function(checkbox) {
-        checkbox.addEventListener('change', handleCheckboxChange);
+function getCurrentState() {
+    const state = { grades: {}, checkboxes: {} };
+    document.querySelectorAll('#gradeForm input[type="number"]').forEach(i => {
+        if (i.value !== "") state.grades[i.name] = i.value;
     });
-});
+    document.querySelectorAll('input[type="checkbox"][data-group]').forEach(cb => {
+        if (cb.checked) state.checkboxes[cb.name] = true;
+    });
+    return state;
+}
 
-function handleCheckboxChange() {
-    var checkbox = this;
-    var targetId = checkbox.dataset.target;
-    var targetElement = document.getElementById(targetId);
+function loadStoredState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        applyState(JSON.parse(raw));
+    } catch {}
+}
 
-    if (checkbox.checked) {
-        // Zeige das entsprechende Prüfungsfeld
-        if (targetElement) {
-            targetElement.style.display = 'block';
-        }
-        // Deaktiviere und verstecke alle anderen in der gleichen Gruppe
-        var group = checkbox.dataset.group;
-        var allCheckboxes = document.querySelectorAll('input[type="checkbox"][data-group="' + group + '"]');
-        allCheckboxes.forEach(function(other) {
-            if (other !== checkbox) {
-                other.checked = false;
-                var otherTargetId = other.dataset.target;
-                var otherTargetElement = document.getElementById(otherTargetId);
-                if (otherTargetElement) {
-                    otherTargetElement.style.display = 'none';
-                }
-            }
+function applyState(state) {
+    if (state.grades) {
+        Object.entries(state.grades).forEach(([k, v]) => {
+            const el = document.getElementsByName(k)[0];
+            if (el) el.value = v;
         });
+    }
+    if (state.checkboxes) {
+        Object.entries(state.checkboxes).forEach(([k, checked]) => {
+            if (!checked) return;
+            const el = document.getElementsByName(k)[0];
+            if (!el) return;
+            el.checked = true;
+            const targetEl = document.getElementById(el.dataset.target);
+            if (targetEl) targetEl.classList.remove("hidden");
+        });
+    }
+}
+
+function anyInputFilled() {
+    return Array.from(document.querySelectorAll('#gradeForm input[type="number"]')).some(i => i.value !== "") ||
+           Array.from(document.querySelectorAll('input[type="checkbox"]')).some(i => i.checked);
+}
+
+// ── Scenario slots ─────────────────────────────────────────
+
+function saveSlot(i) {
+    const state = getCurrentState();
+    const nameEl = document.querySelector(`.scenario-slot[data-slot="${i}"] .scenario-slot__name`);
+    state.name = nameEl?.value || "";
+    const area = document.getElementById("resultArea");
+    state.schnitt = area.dataset.schnitt || null;
+    try { localStorage.setItem(SLOT_KEY(i), JSON.stringify(state)); } catch {}
+    updateSlotUI(i, state);
+    showToast(`„${state.name || "Szenario"}" gespeichert`);
+}
+
+function loadSlot(i) {
+    try {
+        const raw = localStorage.getItem(SLOT_KEY(i));
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        document.getElementById("gradeForm").reset();
+        document.querySelectorAll(".exam-field").forEach(el => el.classList.add("hidden"));
+        clearStates(document.querySelectorAll('#gradeForm input[type="number"]'));
+        applyState(state);
+        updateProgress();
+        calculate();
+        saveState();
+        const nameEl = document.querySelector(`.scenario-slot[data-slot="${i}"] .scenario-slot__name`);
+        showToast(`„${nameEl?.value || "Szenario"}" geladen`);
+    } catch {}
+}
+
+function clearSlot(i) {
+    try { localStorage.removeItem(SLOT_KEY(i)); } catch {}
+    updateSlotUI(i, null);
+}
+
+function updateSlotUI(i, data) {
+    const slot = document.querySelector(`.scenario-slot[data-slot="${i}"]`);
+    if (!slot) return;
+    const gradeEl = slot.querySelector(".scenario-slot__grade");
+    const loadBtn = slot.querySelector(".slot-load");
+    const clearBtn = slot.querySelector(".slot-clear");
+    const hasSomething = data && (
+        Object.keys(data.grades || {}).length > 0 ||
+        Object.keys(data.checkboxes || {}).length > 0
+    );
+    if (hasSomething) {
+        slot.classList.add("slot--filled");
+        gradeEl.textContent = data.schnitt ? `Schnitt ${data.schnitt}` : "Gespeichert";
+        loadBtn.disabled = false;
+        clearBtn.disabled = false;
     } else {
-        // Verstecke das Prüfungsfeld, wenn die Checkbox deaktiviert wird
-        if (targetElement) {
-            targetElement.style.display = 'none';
+        slot.classList.remove("slot--filled");
+        gradeEl.textContent = "Leer";
+        loadBtn.disabled = true;
+        clearBtn.disabled = true;
+    }
+}
+
+function loadScenarios() {
+    for (let i = 0; i < 3; i++) {
+        try {
+            const raw = localStorage.getItem(SLOT_KEY(i));
+            const data = raw ? JSON.parse(raw) : null;
+            updateSlotUI(i, data);
+            if (data?.name) {
+                const nameEl = document.querySelector(`.scenario-slot[data-slot="${i}"] .scenario-slot__name`);
+                if (nameEl) nameEl.value = data.name;
+            }
+        } catch {
+            updateSlotUI(i, null);
         }
     }
 }
 
-function highlightDeficits() {
-    var inputs = document.querySelectorAll('input[type="number"]');
+// ── URL sharing ────────────────────────────────────────────
 
-    inputs.forEach(input => {
-        var value = parseInt(input.value);
-        //Falls die Note zwischen 1 und 4 liegt, wird das Eingabefeld orange eingefärbt
-        if (value >= 0 && value <= 4) {
-            input.style.backgroundColor = "#ffcc80";
-        }
-    });
+function encodeHashGrades() {
+    const grades = FIELD_ORDER.map(name => {
+        const el = document.getElementsByName(name)[0];
+        if (!el || el.value === "" || el.classList.contains("hidden")) return "x";
+        const n = parseInt(el.value, 10);
+        return (isNaN(n) || n < 0 || n > 15) ? "x" : n.toString(16);
+    }).join("");
+
+    const cbCode = document.getElementsByName("mathAbitur")[0]?.checked ? "1" :
+                   document.getElementsByName("englishAbitur")[0]?.checked ? "2" : "0";
+    return grades + cbCode;
 }
 
-/*function highlightZeroGrades() {
-    let semesters = ["Sem3", "Sem4", "Sem5", "Sem6"];
+function decodeHashGrades() {
+    const m = location.hash.match(/g=([0-9a-fx]{29}[012])/i);
+    if (!m) return null;
+    const code = m[1].toLowerCase();
+    const state = { grades: {}, checkboxes: {} };
 
-    let inputs = document.querySelectorAll('input[type="number"]');
-    inputs.forEach(input => {
-        input.style.backgroundColor = "white";
-    });
-    
-    semesters.forEach(semester => {
-        let inputs = document.querySelectorAll(`input[name$="${semester}"]`);
-        inputs.forEach(input => {
-            let value = parseInt(input.value);
-            if (value === 0) {
-                input.style.backgroundColor = "#ff9999";
-                let resultArea = document.getElementById("resultArea");
-                resultArea.innerHTML = "Mindestens <span class='highlight'>ein Kurs</span> wurde mit <span class='highlight'>0 Punkten</span> abgeschlossen. Damit wäre eine Zulassung zur Abiturprüfung <span class='highlight'>nicht möglich.</span>";
-            }
-        });
-    });  
-}*/
-
-function highlightZeroGrades() {
-    let semesters = ["Sem3", "Sem4", "Sem5", "Sem6"];
-    let hasZero = false;
-
-    // Überprüfe, ob irgendwo eine 0 vorkommt
-    semesters.forEach(semester => {
-        let inputs = document.querySelectorAll(`input[name$="${semester}"]`);
-        inputs.forEach(input => {
-            let value = parseInt(input.value);
-            if (value === 0) {
-                hasZero = true;
-            }
-        });
-    });
-
-    if (hasZero) {
-        // Wenn es eine 0 gibt, setze alle Eingabefelder auf weiß zurück
-        let inputs = document.querySelectorAll('input[type="number"]');
-        inputs.forEach(input => {
-            input.style.backgroundColor = "white";
-        });
-
-        // Markiere nur die Felder mit 0 Punkten rot
-        semesters.forEach(semester => {
-            let inputs = document.querySelectorAll(`input[name$="${semester}"]`);
-            inputs.forEach(input => {
-                let value = parseInt(input.value);
-                if (value === 0) {
-                    input.style.backgroundColor = "#ff9999";
-                }
-            });
-        });
-
-        let resultArea = document.getElementById("resultArea");
-        resultArea.innerHTML = "Mindestens <span class='highlight'>ein Kurs</span> wurde mit <span class='highlight'>0 Punkten</span> abgeschlossen. Damit wäre eine Zulassung zur Abiturprüfung <span class='highlight'>nicht möglich.</span>";
+    for (let i = 0; i < 29; i++) {
+        const c = code[i];
+        if (c === "x") continue;
+        const n = parseInt(c, 16);
+        if (!isNaN(n) && n >= 0 && n <= 15) state.grades[FIELD_ORDER[i]] = String(n);
     }
+
+    const cbCode = code[29];
+    if (cbCode === "1") state.checkboxes["mathAbitur"] = true;
+    else if (cbCode === "2") state.checkboxes["englishAbitur"] = true;
+
+    return (Object.keys(state.grades).length || Object.values(state.checkboxes).some(v => v)) ? state : null;
+}
+
+function shareLink() {
+    const url = `${location.origin}${location.pathname}#g=${encodeHashGrades()}`;
+    if (navigator.share) {
+        navigator.share({ title: "Abitur-Rechner", url }).catch(() => {});
+        return;
+    }
+    const fallback = () => {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); showToast("Link kopiert"); } catch { showToast("Konnte Link nicht kopieren"); }
+        document.body.removeChild(ta);
+    };
+    if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(url).then(() => showToast("Link kopiert"), fallback);
+    } else {
+        fallback();
+    }
+}
+
+// ── UI helpers ─────────────────────────────────────────────
+
+function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("toast--visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove("toast--visible"), 2200);
+}
+
+function updateGradeHint(input) {
+    const v = parseInt(input.value, 10);
+    const hint = document.getElementById("gradeHint");
+    if (!isNaN(v) && v >= 0 && v <= 15) {
+        hint.textContent = GRADE_NAMES[v];
+        hint.classList.add("grade-hint--visible");
+    } else {
+        hideGradeHint();
+    }
+}
+
+function hideGradeHint() {
+    document.getElementById("gradeHint").classList.remove("grade-hint--visible");
 }
