@@ -60,6 +60,20 @@ const FIELD_LABELS = {
     englishExam: "Eng Abi",  historyExam: "Ges Abi"
 };
 
+// Abiturdurchschnittsnote nach APO-WbK Anlage 8: N = 5 2/3 - P/180, auf eine Nachkommastelle
+// ABGESCHNITTEN (nicht gerundet) - daher die 18-Punkte-Baender der Tabelle; bester Wert 1,0.
+const NOTE_BASIS = 17 / 3;
+
+function abiNote(punkte) {
+    return Math.max(1.0, Math.floor((NOTE_BASIS - punkte / 180) * 10 + 1e-9) / 10);
+}
+
+// Kleinste Gesamtpunktzahl, die laut Anlage 8 noch die Note `note` ergibt.
+// Untergrenze 300, weil Block I (200) und Block II (100) zusammen nicht weniger zulassen.
+function punkteFuerNote(note) {
+    return Math.max(300, Math.floor(180 * (NOTE_BASIS - note - 0.1) + 1e-9) + 1);
+}
+
 const STORAGE_KEY = "abi-rechner-grades-v1";
 const SLOT_KEY = i => `abi-rechner-slot-${i}`;
 
@@ -239,7 +253,7 @@ function calculate() {
 
     const totalPoints = pointsBlockI + pointsBlockII;
     currentTotalPoints = totalPoints;
-    const avgAbitur = Math.max(1.0, 5.67 - totalPoints / 180);
+    const avgAbitur = abiNote(totalPoints);
     const avgStr = avgAbitur.toFixed(1).replace(".", ",");
 
     const deficitListSem = getIncludedDeficitList(false);
@@ -348,11 +362,10 @@ function getIncludedDeficitList(includeExams = true) {
 }
 
 function buildTargetHint(totalPoints) {
-    const currentAvg = Math.max(1.0, 5.67 - totalPoints / 180);
-    const displayedAvg = parseFloat(currentAvg.toFixed(1));
-    const nextTarget = parseFloat((displayedAvg - 0.1).toFixed(1));
+    const currentAvg = abiNote(totalPoints);
+    const nextTarget = parseFloat((currentAvg - 0.1).toFixed(1));
     if (nextTarget < 1.0) return "";
-    const neededTotal = Math.ceil((5.67 - nextTarget) * 180);
+    const neededTotal = punkteFuerNote(nextTarget);
     const diff = neededTotal - totalPoints;
     if (diff <= 0) return "";
     const punkteStr = diff === 1 ? "Punkt" : "Punkte";
@@ -385,7 +398,7 @@ function updateTargetOutput() {
         outputEl.innerHTML = "";
         return;
     }
-    const neededTotal = (5.67 - val) * 180;
+    const neededTotal = punkteFuerNote(val);
     if (currentTotalPoints >= neededTotal) {
         outputEl.innerHTML = `<span class="target-achieved">Ziel bereits erreicht ✓</span>`;
         return;

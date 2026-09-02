@@ -23,7 +23,9 @@ Die **Fächerbelegung ist fest auf das WBK Münster zugeschnitten** und steht so
 | 3./4. Abiturfach | Mathematik **oder** Englisch (Auswahl per Checkbox) |
 
 Wer den Rechner an einer anderen Schule einsetzen will, muss diese Belegung anpassen — die
-Rechenregeln darunter folgen der APO-WbK und gelten allgemein.
+Rechenregeln darunter folgen der APO-WbK (Stand: Abgleich vom 02.09.2026, §§ 43, 44, 57 und
+Anlage 8) und gelten für den Bildungsgang **Abendgymnasium**. Für den Bildungsgang **Kolleg**
+gelten nach § 43 Abs. 3 andere Kurszahlen und Defizitgrenzen.
 
 ## Rechenregeln
 
@@ -43,25 +45,50 @@ fünf Defiziten werden alle Kurse eingebracht (Pflicht zur Vollbelegung).
 Block II = 5 · Σ Abiturnoten
 ```
 
-**Durchschnittsnote:**
+**Durchschnittsnote** nach APO-WbK **Anlage 8**:
 
 ```
-Note = max( 1,0 ;  5,67 − Gesamtpunkte / 180 )
+Note = 5⅔ − Gesamtpunkte / 180
 ```
 
-**Defizit** = Kurs mit 4 Punkten oder weniger.
+Das Ergebnis wird auf eine Nachkommastelle **abgeschnitten, nicht gerundet** — daher die
+18-Punkte-Bänder der Tabelle (900–823 = 1,0; 822–805 = 1,1; …; 300 = 4,0). Bester Wert ist 1,0.
+
+**Defizit** = Kurs mit 4 Punkten oder weniger (§ 43 Abs. 2 Nr. 4).
 
 Der Rechner bricht mit einer Meldung ab, wenn eine dieser Bedingungen verletzt ist:
 
-| Bedingung | Folge |
-|---|---|
-| Semesterkurs mit 0 Punkten | keine Zulassung |
-| mehr als 5 Defizite insgesamt | keine Zulassung |
-| mehr als 3 Defizite im LK-Bereich | keine Zulassung |
-| Block I unter 200 Punkte | keine Zulassung |
-| Block II unter 100 Punkte | nicht bestanden (mündliche Nachprüfung ggf. möglich) |
-| 2 Defizite in den LK-Prüfungen | nicht bestanden (mündliche Nachprüfung ggf. möglich) |
-| 2 Defizite in den GK-Prüfungen | nicht bestanden (mündliche Nachprüfung ggf. möglich) |
+| Bedingung | Folge | Fundstelle |
+|---|---|---|
+| Semesterkurs mit 0 Punkten | keine Zulassung | § 43 Abs. 6, § 44 Abs. 2 Nr. 1 |
+| mehr als 5 Defizite insgesamt | keine Zulassung | § 43 Abs. 2 Nr. 4 |
+| mehr als 3 Defizite im LK-Bereich | keine Zulassung | § 43 Abs. 2 Nr. 4 |
+| Block I unter 200 Punkte | keine Zulassung | § 43 Abs. 2 Nr. 1 |
+| Block II unter 100 Punkte | nicht bestanden (mündliche Nachprüfung ggf. möglich) | § 43 Abs. 2 Nr. 1 |
+| 2 Defizite in den LK-Prüfungen | nicht bestanden (mündliche Nachprüfung ggf. möglich) | § 43 Abs. 4 |
+| 2 Defizite in den GK-Prüfungen | nicht bestanden (mündliche Nachprüfung ggf. möglich) | § 43 Abs. 4 |
+
+Die beiden Abitur-Zeilen sind die Umformung von § 43 Abs. 4 („in zwei Prüfungsfächern, darunter
+einem Leistungskursfach, jeweils mindestens 25 Punkte") — bei vier Prüfungen sind beide
+Formulierungen gleichwertig.
+
+### Bewusste Vereinfachungen
+
+Der Rechner ist ein Selbsteinschätzungswerkzeug, kein Prüfungsprogramm. An drei Stellen ist er
+gröber als die APO:
+
+1. **Defizitgrenze.** § 43 Abs. 2 Nr. 4 staffelt nach Zahl der eingebrachten Kurse: bei 18–22
+   Kursen höchstens **4** Defizite, bei 23–24 höchstens **5**. Der Rechner prüft pauschal gegen 5
+   und bringt ab fünf Defiziten automatisch alle 24 Kurse ein.
+2. **Wahl der Grundkurse.** Kunst und Erdkunde werden eingebracht, wenn sie den Schnitt heben —
+   eine Optimierung, keine Vorschrift. Über die tatsächliche Einbringung entscheidet der
+   Zentrale Abiturausschuss.
+3. **Null Punkte.** Jede Null gilt hier als „keine Zulassung". Nach § 43 Abs. 6 gilt ein solcher
+   Kurs nur als nicht belegt — in Kunst oder Erdkunde bliebe das folgenlos.
+
+Nicht abgebildet: besondere Lernleistung (§ 38) und Projektkurs (§ 43 Abs. 5). Wurde in einem
+Abiturfach zusätzlich mündlich geprüft, ist das Endergebnis des Fachs im Verhältnis 2
+(schriftlich) : 1 (mündlich) einzutragen, nicht die schriftliche Note (§ 43 Abs. 2 Nr. 1).
 
 ## Funktionen
 
